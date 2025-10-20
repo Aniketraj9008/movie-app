@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Supercharged Movie App</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .modal-fade-in { animation: fadeIn 0.3s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .filter-drawer { transition: transform 0.3s ease-in-out; }
+        .filter-tag { animation: popIn 0.2s ease-out; }
+        @keyframes popIn { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+    </style>
+</head>
+<body class="bg-gray-900 text-white">
+
+    <!-- Main Container -->
+    <div class="container mx-auto p-4 sm:p-6 max-w-7xl">
+        
+        <!-- Header -->
+        <header class="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
+            <h1 class="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-500">CineSearch</h1>
+            <div class="flex items-center gap-2 sm:gap-4">
+                <button id="filterToggleButton" class="bg-gray-800 hover:bg-gray-700 text-white font-semibold py-2 px-4 rounded-lg flex items-center gap-2 transition">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 3a1 1 0 011-1h12a1 1 0 011 1v3a1 1 0 01-.293.707L12 11.414V15a1 1 0 01-.293.707l-2 2A1 1 0 018 17v-5.586L3.293 6.707A1 1 0 013 6V3z" clip-rule="evenodd" /></svg>
+                    Filter & Sort
+                </button>
+                <button id="surpriseMeButton" class="bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2 px-4 rounded-lg flex items-center gap-2 transition">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M5 2a1 1 0 011 1v1h1a1 1 0 010 2H6v1a1 1 0 01-2 0V6H3a1 1 0 010-2h1V3a1 1 0 011-1zm6 0h3a1 1 0 010 2h-3a1 1 0 010-2zM5 10h3a1 1 0 010 2H5a1 1 0 010-2zm6 0h3a1 1 0 010 2h-3a1 1 0 010-2zM5 14h3a1 1 0 010 2H5a1 1 0 010-2zm6 0h3a1 1 0 010 2h-3a1 1 0 010-2z" /></svg>
+                    Surprise Me!
+                </button>
+            </div>
+        </header>
+
+        <!-- Search Form -->
+        <div class="relative mb-4 max-w-2xl mx-auto">
+            <input type="text" id="searchInput" class="w-full p-4 pr-16 bg-gray-800 border-2 border-gray-700 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 text-lg" placeholder="Search for a movie...">
+            <button id="searchButton" class="absolute top-1/2 right-4 -translate-y-1/2 text-blue-500"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg></button>
+        </div>
+
+        <!-- Curated Lists Navigation -->
+        <nav class="flex justify-center gap-4 mb-6">
+            <button class="nav-btn text-gray-400 font-semibold" data-list="popular">Popular</button>
+            <button class="nav-btn text-gray-400 font-semibold" data-list="top_rated">Top Rated</button>
+            <button class="nav-btn text-gray-400 font-semibold" data-list="upcoming">Upcoming</button>
+        </nav>
+
+        <!-- Current Filters Display -->
+        <div id="currentFilters" class="flex flex-wrap gap-2 justify-center mb-6 min-h-[2rem]"></div>
+
+        <!-- Results -->
+        <h2 id="resultsTitle" class="text-2xl font-bold mb-4 text-center"></h2>
+        <main id="resultContainer" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
+            <!-- Movie cards will be injected here -->
+        </main>
+        <div id="pagination" class="flex justify-center items-center gap-4 mt-8"></div>
+    </div>
+
+    <!-- Filter Drawer -->
+    <div id="filterDrawer" class="fixed top-0 right-0 h-full w-80 bg-gray-800 shadow-2xl p-6 transform translate-x-full z-50 filter-drawer overflow-y-auto">
+        <div class="flex justify-between items-center mb-6">
+            <h2 class="text-2xl font-bold">Filter & Sort</h2>
+            <button id="closeFilterButton">&times;</button>
+        </div>
+        <div class="space-y-6">
+            <div>
+                <label for="sortSelector" class="block font-semibold mb-2">Sort By</label>
+                <select id="sortSelector" class="w-full bg-gray-700 p-2 rounded-lg">
+                    <option value="popularity.desc">Popularity</option>
+                    <option value="vote_average.desc">Rating</option>
+                    <option value="release_date.desc">Release Date</option>
+                    <option value="revenue.desc">Revenue</option>
+                </select>
+            </div>
+            <div>
+                <label for="genreSelector" class="block font-semibold mb-2">Genres</label>
+                <div id="genreSelector" class="max-h-40 overflow-y-auto space-y-2 p-2 bg-gray-700 rounded-lg">
+                    <!-- Genres Checkboxes will be injected here -->
+                </div>
+            </div>
+            <div>
+                <label for="yearSelector" class="block font-semibold mb-2">Release Year</label>
+                <input type="number" id="yearSelector" min="1900" max="2024" placeholder="e.g., 2023" class="w-full bg-gray-700 p-2 rounded-lg">
+            </div>
+            <div>
+                <label for="ratingSelector" class="block font-semibold mb-2">Minimum Rating: <span id="ratingValue">0</span></label>
+                <input type="range" id="ratingSelector" min="0" max="10" step="0.5" value="0" class="w-full">
+            </div>
+            <button id="applyFiltersButton" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg">Apply</button>
+            <button id="resetFiltersButton" class="w-full bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-lg mt-2">Reset</button>
+        </div>
+    </div>
+
+    <!-- Movie Details Modal -->
+    <div id="movieModal" class="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center p-4 z-40 hidden modal-fade-in">
+        <div id="modalContent" class="bg-gray-800 rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] overflow-y-auto relative"></div>
+    </div>
+
+    <script>
+        const apiKey = '0f9cdf4219c7bec12759a3ee454614dd';
+        const apiUrlBase = 'https://api.themoviedb.org/3';
+        const imageBaseUrl = 'https://image.tmdb.org/t/p/w500';
+        
+        let currentPage = 1;
+        let totalPages = 1;
+        let currentFilters = { genres: [], year: '', rating: '0', sort_by: 'popularity.desc' };
+        let currentView = 'popular'; // 'popular', 'top_rated', 'upcoming', or 'search'
+        let currentQuery = '';
+
+        // DOM Elements
+        const DOMElements = {
+            searchInput: document.getElementById('searchInput'),
+            searchButton: document.getElementById('searchButton'),
+            resultContainer: document.getElementById('resultContainer'),
+            resultsTitle: document.getElementById('resultsTitle'),
+            movieModal: document.getElementById('movieModal'),
+            modalContent: document.getElementById('modalContent'),
+            pagination: document.getElementById('pagination'),
+            filterToggleButton: document.getElementById('filterToggleButton'),
+            filterDrawer: document.getElementById('filterDrawer'),
+            closeFilterButton: document.getElementById('closeFilterButton'),
+            applyFiltersButton: document.getElementById('applyFiltersButton'),
+            resetFiltersButton: document.getElementById('resetFiltersButton'),
+            surpriseMeButton: document.getElementById('surpriseMeButton'),
+            currentFiltersContainer: document.getElementById('currentFilters'),
+            sortSelector: document.getElementById('sortSelector'),
+            genreSelector: document.getElementById('genreSelector'),
+            yearSelector: document.getElementById('yearSelector'),
+            ratingSelector: document.getElementById('ratingSelector'),
+            ratingValue: document.getElementById('ratingValue'),
+            navButtons: document.querySelectorAll('.nav-btn'),
+        };
+
+        async function fetchAndDisplay(view, query = '', page = 1) {
+            let url = '';
+            let title = '';
+            currentPage = page;
+            currentView = view;
+            currentQuery = query;
+
+            const filterParams = `&sort_by=${currentFilters.sort_by}&with_genres=${currentFilters.genres.join(',')}&primary_release_year=${currentFilters.year}&vote_average.gte=${currentFilters.rating}`;
+
+            switch(view) {
+                case 'search':
+                    url = `${apiUrlBase}/search/movie?api_key=${apiKey}&query=${encodeURIComponent(query)}&page=${page}`;
+                    title = `Results for "${query}"`;
+                    break;
+                case 'discover':
+                    url = `${apiUrlBase}/discover/movie?api_key=${apiKey}&page=${page}${filterParams}`;
+                    title = "Filtered Results";
+                    break;
+                default: // popular, top_rated, etc.
+                    url = `${apiUrlBase}/movie/${view}?api_key=${apiKey}&page=${page}`;
+                    title = view.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
+            }
+
+            DOMElements.resultContainer.innerHTML = `<p class="col-span-full text-center text-gray-400 text-xl mt-10">Loading...</p>`;
+            DOMElements.resultsTitle.textContent = title;
+
+            try {
+                const response = await fetch(url);
+                const data = await response.json();
+                displayMovies(data.results);
+                totalPages = data.total_pages;
+                setupPagination();
+            } catch (error) {
+                console.error('Fetch Error:', error);
+                DOMElements.resultContainer.innerHTML = `<p class="col-span-full text-center text-red-400 text-xl mt-10">Error fetching movies.</p>`;
+            }
+        }
+        
+        function displayMovies(movies) {
+            DOMElements.resultContainer.innerHTML = '';
+             if (movies.length === 0) {
+                DOMElements.resultContainer.innerHTML = `<p class="col-span-full text-center text-gray-500 text-xl mt-10">No movies found.</p>`;
+                return;
+            }
+            movies.forEach(movie => {
+                const posterPath = movie.poster_path ? `${imageBaseUrl}${movie.poster_path}` : 'https://placehold.co/500x750/374151/FFFFFF?text=No+Image';
+                const movieCard = document.createElement('div');
+                movieCard.className = 'bg-gray-800 rounded-lg shadow-lg overflow-hidden cursor-pointer transform hover:scale-105 transition duration-300';
+                movieCard.innerHTML = `
+                    <img src="${posterPath}" alt="${movie.title}" class="w-full h-auto object-cover">
+                    <div class="p-3">
+                        <h3 class="font-bold truncate">${movie.title}</h3>
+                        <p class="text-sm text-gray-400">${movie.release_date ? movie.release_date.split('-')[0] : 'N/A'}</p>
+                    </div>`;
+                movieCard.addEventListener('click', () => showMovieDetails(movie.id));
+                DOMElements.resultContainer.appendChild(movieCard);
+            });
+        }
+
+        async function showMovieDetails(movieId) {
+            try {
+                const response = await fetch(`${apiUrlBase}/movie/${movieId}?api_key=${apiKey}&append_to_response=release_dates,credits`);
+                const movie = await response.json();
+
+                const usCertification = movie.release_dates.results.find(r => r.iso_3166_1 === 'US')?.release_dates[0].certification;
+
+                const backdropPath = movie.backdrop_path ? `https://image.tmdb.org/t/p/w1280${movie.backdrop_path}` : '';
+                const posterPath = movie.poster_path ? `${imageBaseUrl}${movie.poster_path}` : 'https://placehold.co/500x750/374151/FFFFFF?text=No+Image';
+
+                DOMElements.modalContent.innerHTML = `
+                    <div class="absolute top-4 right-4 text-white text-3xl cursor-pointer" onclick="hideMovieDetails()">&times;</div>
+                    <div class="relative">
+                        <img src="${backdropPath}" class="w-full h-48 sm:h-72 object-cover rounded-t-lg opacity-40">
+                        <div class="absolute inset-0 bg-gradient-to-t from-gray-800 to-transparent"></div>
+                    </div>
+                    <div class="p-6 sm:p-8 flex flex-col sm:flex-row gap-6 -mt-24 relative z-10">
+                        <img src="${posterPath}" alt="${movie.title}" class="w-1/3 max-w-[200px] h-auto rounded-lg shadow-2xl self-center sm:self-start">
+                        <div class="flex-1">
+                            <h2 class="text-3xl font-bold">${movie.title}</h2>
+                             <div class="flex items-center flex-wrap gap-4 my-2 text-gray-300">
+                                ${usCertification ? `<span class="border px-2 py-0.5 rounded text-xs">${usCertification}</span>` : ''}
+                                <span>⭐ ${movie.vote_average.toFixed(1)}/10</span>
+                                <span>${movie.runtime} min</span>
+                                <span>${movie.release_date.split('-')[0]}</span>
+                            </div>
+                            <div class="flex flex-wrap gap-2 my-4">${movie.genres.map(g => `<span class="bg-gray-700 text-xs font-semibold px-2.5 py-1 rounded-full">${g.name}</span>`).join('')}</div>
+                            <p class="text-gray-300 mb-4">${movie.overview}</p>
+                        </div>
+                    </div>`;
+                DOMElements.movieModal.classList.remove('hidden');
+            } catch (error) { console.error('Modal Fetch Error:', error); }
+        }
+
+        function hideMovieDetails() {
+            DOMElements.movieModal.classList.add('hidden');
+        }
+
+        function setupPagination() {
+            DOMElements.pagination.innerHTML = '';
+            if (totalPages <= 1) return;
+
+            const createBtn = (text, page, disabled = false) => {
+                const btn = document.createElement('button');
+                btn.innerHTML = text;
+                btn.disabled = disabled;
+                btn.className = `px-4 py-2 rounded-lg ${disabled ? 'bg-gray-700 text-gray-500' : 'bg-blue-600 hover:bg-blue-700'}`;
+                if (!disabled) btn.onclick = () => fetchAndDisplay(currentView, currentQuery, page);
+                return btn;
+            };
+
+            DOMElements.pagination.appendChild(createBtn('<< First', 1, currentPage === 1));
+            DOMElements.pagination.appendChild(createBtn('< Prev', currentPage - 1, currentPage === 1));
+
+            const pageInfo = document.createElement('span');
+            pageInfo.textContent = `Page ${currentPage} of ${totalPages > 500 ? 500 : totalPages}`;
+            pageInfo.className = 'font-semibold';
+            DOMElements.pagination.appendChild(pageInfo);
+
+            DOMElements.pagination.appendChild(createBtn('Next >', currentPage + 1, currentPage >= (totalPages > 500 ? 500 : totalPages)));
+            DOMElements.pagination.appendChild(createBtn('Last >>', (totalPages > 500 ? 500 : totalPages), currentPage >= (totalPages > 500 ? 500 : totalPages)));
+        }
+
+        async function populateGenres() {
+            try {
+                const response = await fetch(`${apiUrlBase}/genre/movie/list?api_key=${apiKey}`);
+                const data = await response.json();
+                DOMElements.genreSelector.innerHTML = data.genres.map(genre => `
+                    <label class="flex items-center gap-2">
+                        <input type="checkbox" value="${genre.id}" class="genre-checkbox bg-gray-600">
+                        <span>${genre.name}</span>
+                    </label>`).join('');
+            } catch (error) { console.error('Genre Fetch Error:', error); }
+        }
+
+        function applyCurrentFilters() {
+            currentFilters.sort_by = DOMElements.sortSelector.value;
+            currentFilters.year = DOMElements.yearSelector.value;
+            currentFilters.rating = DOMElements.ratingSelector.value;
+            currentFilters.genres = [...DOMElements.genreSelector.querySelectorAll('.genre-checkbox:checked')].map(el => el.value);
+            
+            DOMElements.filterDrawer.classList.add('translate-x-full');
+            updateCurrentFiltersDisplay();
+            fetchAndDisplay('discover', '', 1);
+        }
+        
+        function updateCurrentFiltersDisplay() {
+            DOMElements.currentFiltersContainer.innerHTML = '';
+            const allGenres = [...DOMElements.genreSelector.querySelectorAll('label')].reduce((acc, label) => {
+                const input = label.querySelector('input');
+                acc[input.value] = label.querySelector('span').textContent;
+                return acc;
+            }, {});
+
+            const createTag = (text, removeFn) => {
+                const tag = document.createElement('div');
+                tag.className = 'filter-tag bg-blue-600 text-white text-sm font-semibold px-3 py-1 rounded-full flex items-center gap-2';
+                tag.innerHTML = `<span>${text}</span><button class="font-bold" onclick="(${removeFn.toString()})()">×</button>`;
+                DOMElements.currentFiltersContainer.appendChild(tag);
+            };
+
+            if (currentFilters.year) createTag(`Year: ${currentFilters.year}`, () => { DOMElements.yearSelector.value = ''; applyCurrentFilters(); });
+            if (currentFilters.rating > 0) createTag(`Rating: ${currentFilters.rating}+`, () => { DOMElements.ratingSelector.value = 0; DOMElements.ratingValue.textContent = 0; applyCurrentFilters(); });
+            currentFilters.genres.forEach(genreId => {
+                createTag(allGenres[genreId], () => { DOMElements.genreSelector.querySelector(`input[value="${genreId}"]`).checked = false; applyCurrentFilters(); });
+            });
+        }
+        
+        async function surpriseMe() {
+            const randomPage = Math.floor(Math.random() * 100) + 1;
+            const url = `${apiUrlBase}/discover/movie?api_key=${apiKey}&sort_by=popularity.desc&page=${randomPage}`;
+            try {
+                const response = await fetch(url);
+                const data = await response.json();
+                const randomMovie = data.results[Math.floor(Math.random() * data.results.length)];
+                showMovieDetails(randomMovie.id);
+            } catch (error) { console.error('Surprise Me Error:', error); }
+        }
+
+        // --- Event Listeners ---
+        function setupEventListeners() {
+            DOMElements.searchButton.addEventListener('click', () => fetchAndDisplay('search', DOMElements.searchInput.value, 1));
+            DOMElements.searchInput.addEventListener('keyup', e => { if (e.key === 'Enter') fetchAndDisplay('search', DOMElements.searchInput.value, 1); });
+            DOMElements.filterToggleButton.addEventListener('click', () => DOMElements.filterDrawer.classList.remove('translate-x-full'));
+            DOMElements.closeFilterButton.addEventListener('click', () => DOMElements.filterDrawer.classList.add('translate-x-full'));
+            DOMElements.applyFiltersButton.addEventListener('click', applyCurrentFilters);
+            DOMElements.surpriseMeButton.addEventListener('click', surpriseMe);
+            DOMElements.ratingSelector.addEventListener('input', () => DOMElements.ratingValue.textContent = DOMElements.ratingSelector.value);
+            DOMElements.movieModal.addEventListener('click', e => { if (e.target === DOMElements.movieModal) hideMovieDetails(); });
+            
+            DOMElements.navButtons.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    DOMElements.searchInput.value = '';
+                    fetchAndDisplay(btn.dataset.list, '', 1);
+                });
+            });
+
+            DOMElements.resetFiltersButton.addEventListener('click', () => {
+                DOMElements.sortSelector.value = 'popularity.desc';
+                DOMElements.yearSelector.value = '';
+                DOMElements.ratingSelector.value = 0;
+                DOMElements.ratingValue.textContent = 0;
+                DOMElements.genreSelector.querySelectorAll('.genre-checkbox:checked').forEach(el => el.checked = false);
+                applyCurrentFilters();
+            });
+        }
+
+        // --- Initialization ---
+        function init() {
+            populateGenres();
+            setupEventListeners();
+            fetchAndDisplay('popular', '', 1); // Load popular movies on start
+        }
+
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
